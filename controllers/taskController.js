@@ -33,8 +33,8 @@ exports.createTask = async (req, res) => {
             title,
             description,
             deadline,
-            event: event._id, // Store the event's ID
-            eventManager: eventManager._id // Store the event manager's ID
+            event: event._id, 
+            eventManager: eventManager._id 
         });
 
         await task.save();
@@ -63,27 +63,34 @@ exports.createTask = async (req, res) => {
 exports.getAllTasks = async (req, res) => {
     try {
         const tasks = await Task.find().populate('event').populate('eventManager');
-        res.status(200).json(tasks);
+        const taskCount = await Task.countDocuments();  // Count all tasks
+        res.status(200).json({ tasks, count: taskCount });
     } catch (error) {
         console.error('Error fetching tasks:', error.message);
-        console.log(error); 
         res.status(400).json({ message: 'Error fetching tasks', error: error.message });
     }
 };
 
 
+
 // Get a single task
 exports.getTask = async (req, res) => {
     try {
-        const task = await Task.findById(req.params.id).populate('eventManager');
+        // Find the task by ID and populate the event and eventManager fields
+        const task = await Task.findById(req.params.id)
+            .populate('event', 'name') // Populate the event field and select only the name
+            .populate('eventManager'); // Populate the eventManager field as before
+
         if (!task) {
             return res.status(404).json({ message: 'Task not found' });
         }
+
         res.status(200).json(task);
     } catch (error) {
         res.status(400).json({ message: 'Error fetching task' });
     }
 };
+
 
 
 // Find tasks assigned to the logged-in event manager
@@ -153,15 +160,20 @@ exports.updateTask = async (req, res) => {
         // Save the updated task
         await task.save();
 
+        // Include the event name in the response
         res.status(200).json({
             message: 'Task updated successfully',
-            task
+            task: {
+                ...task.toObject(), // Convert the task to a plain object
+                eventName: event.name // Add the event name
+            }
         });
     } catch (error) {
         console.error('Error updating task:', error.message);
         res.status(400).json({ message: 'Error updating task', error: error.message });
     }
 };
+
 
 
 // Delete a task

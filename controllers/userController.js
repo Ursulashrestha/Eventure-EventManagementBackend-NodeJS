@@ -52,7 +52,7 @@ exports.loginUser = async (req, res) => {
     }
 };
 
-// @desc Get all users (Admin only)
+// Get all users (Admin only)
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
@@ -61,6 +61,18 @@ exports.getAllUsers = async (req, res) => {
         res.status(400).json({ message: 'Error fetching users' });
     }
 };
+
+// Count all users
+exports.getUserCount = async (req, res) => {
+    try {
+        const userCount = await User.countDocuments(); 
+        res.status(200).json({ count: userCount });
+    } catch (error) {
+        console.error('Error fetching user count:', error.message);
+        res.status(400).json({ message: 'Error fetching user count', error: error.message });
+    }
+};
+
 
 exports.deleteUser = async (req, res) => {
     try {

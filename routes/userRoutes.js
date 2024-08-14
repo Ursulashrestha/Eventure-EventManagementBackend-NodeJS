@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, getAllUsers, deleteUser } = require('../controllers/userController');
+const { registerUser, loginUser, getAllUsers, deleteUser, getUserCount } = require('../controllers/userController');
 const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -13,6 +13,7 @@ router.post('/login', loginUser);
 // Admin can access all users
 router.get('/', auth, authorize('ADMIN'), getAllUsers);
 
+router.get('/alluser-count', getUserCount);
 // Admin can delete users
 router.delete('/:id', auth, authorize('ADMIN'), deleteUser);
 

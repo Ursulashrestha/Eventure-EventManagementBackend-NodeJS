@@ -5,6 +5,12 @@ exports.createEvent = async (req, res) => {
     const { name, date, location, description, eventManagerName, participantNames } = req.body;
 
     try {
+        // Check if an event with the same name and description already exists
+        const existingEvent = await Event.findOne({ name, description });
+        if (existingEvent) {
+            return res.status(400).json({ message: 'Event with the same name and description already exists' });
+        }
+
         // Find the event manager by name, ensuring it's an event_manager role
         const eventManager = await User.findOne({ name: eventManagerName, role: 'EVENTMANAGER' });
         if (!eventManager) {
@@ -28,8 +34,8 @@ exports.createEvent = async (req, res) => {
             date,
             location,
             description,
-            eventManager: eventManager._id, // Store the event manager's ID
-            participants: participants.map(p => p._id) // Store the participant IDs
+            eventManager: eventManager._id, 
+            participants: participants.map(p => p._id) 
         });
 
         await event.save();
@@ -51,11 +57,40 @@ exports.createEvent = async (req, res) => {
 };
 
 
+// Get all event managers
+exports.getAllEventManagers = async (req, res) => {
+    try {
+        const eventManagers = await User.find({ role: 'EVENTMANAGER' }).select('name email');
+        res.status(200).json(eventManagers);
+    } catch (error) {
+        console.error('Error fetching event managers:', error.message);
+        res.status(400).json({ message: 'Error fetching event managers', error: error.message });
+    }
+};
 
+//get all event manager count
+exports.getEventManagerCount = async (req, res) => {
+    try {
+        const count = await User.countDocuments({ role: 'EVENTMANAGER' });
+        res.status(200).json({ count });
+    } catch (error) {
+        console.error('Error fetching event manager count:', error.message);
+        res.status(400).json({ message: 'Error fetching event manager count', error: error.message });
+    }
+};
 
+// Get all participants
+exports.getAllParticipants = async (req, res) => {
+    try {
+        const participants = await User.find({ role: 'PARTICIPANT' }).select('name email');
+        res.status(200).json(participants);
+    } catch (error) {
+        console.error('Error fetching participants:', error.message);
+        res.status(400).json({ message: 'Error fetching participants', error: error.message });
+    }
+};
 
-
-// @desc Get all events
+//  Get all events
 exports.getAllEvents = async (req, res) => {
     try {
         const events = await Event.find().populate('eventManager participants');
@@ -64,6 +99,31 @@ exports.getAllEvents = async (req, res) => {
         res.status(400).json({ message: 'Error fetching events' });
     }
 };
+
+// get all event counts
+exports.getEventCount = async (req, res) => {
+    try {
+        const eventCount = await Event.countDocuments(); 
+        res.status(200).json({ count: eventCount });
+    } catch (error) {
+        console.error('Error fetching event count:', error.message);
+        res.status(400).json({ message: 'Error fetching event count', error: error.message });
+    }
+};
+
+
+//get all upcoming events
+exports.getAllUpcomingEvents = async (req, res) => {
+    try {
+        const currentDate = new Date();
+        const events = await Event.find({ date: { $gt: currentDate } })
+            .populate('eventManager participants');
+        res.status(200).json(events);
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching upcoming events' });
+    }
+};
+
 
 // @desc Get a single event
 exports.getEvent = async (req, res) => {
