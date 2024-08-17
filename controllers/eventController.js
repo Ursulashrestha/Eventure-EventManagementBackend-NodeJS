@@ -217,3 +217,85 @@ exports.deleteEvent = async (req, res) => {
     }
 };
 
+
+// /////////////////////////////////////////////////////////////////
+
+
+
+
+// Update an event (No creator check)
+exports.updateWEvent = async (req, res) => {
+    const { name, date, location, description, eventManagerName, participantNames } = req.body;
+
+    try {
+        // Find the event by ID
+        const event = await Event.findById(req.params.id);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Check if the user is an admin or event manager
+        if (req.user.role !== 'ADMIN' && req.user.role !== 'EVENTMANAGER') {
+            return res.status(403).json({ message: 'Not authorized to update this event' });
+        }
+
+        // Update the event fields
+        if (name) event.name = name;
+        if (date) event.date = date;
+        if (location) event.location = location;
+        if (description) event.description = description;
+
+        // Update the event manager if provided
+        if (eventManagerName) {
+            const eventManager = await User.findOne({ name: eventManagerName, role: 'EVENTMANAGER' });
+            if (!eventManager) {
+                return res.status(404).json({ message: 'Event Manager not found or invalid role' });
+            }
+            event.eventManager = eventManager._id;
+        }
+
+        // Update participant names if provided
+        if (participantNames) {
+            const participants = await User.find({ name: { $in: participantNames }, role: 'PARTICIPANT' });
+            if (participants.length !== participantNames.length) {
+                return res.status(404).json({ message: 'One or more participants not found or invalid role' });
+            }
+            event.participants = participants.map(participant => participant._id);
+        }
+
+        // Save the updated event
+        await event.save();
+
+        res.status(200).json({
+            message: 'Event updated successfully',
+            event
+        });
+    } catch (error) {
+        console.error('Error updating event:', error.message);
+        res.status(400).json({ message: 'Error updating event', error: error.message });
+    }
+};
+
+// Delete an event (No creator check)
+exports.deleteWEvent = async (req, res) => {
+    try {
+        // Find the event by ID
+        const event = await Event.findById(req.params.id);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Check if the user is an admin or event manager
+        if (req.user.role !== 'ADMIN' && req.user.role !== 'EVENTMANAGER') {
+            return res.status(403).json({ message: 'Not authorized to delete this event' });
+        }
+
+        await event.deleteOne();
+
+        res.status(200).json({ message: 'Event deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting event:', error.message);
+        res.status(400).json({ message: 'Error deleting event', error: error.message });
+    }
+};
+

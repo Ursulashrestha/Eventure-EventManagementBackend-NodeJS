@@ -78,8 +78,8 @@ exports.getTask = async (req, res) => {
     try {
         // Find the task by ID and populate the event and eventManager fields
         const task = await Task.findById(req.params.id)
-            .populate('event', 'name') // Populate the event field and select only the name
-            .populate('eventManager'); // Populate the eventManager field as before
+            .populate('event', 'name') 
+            .populate('eventManager'); 
 
         if (!task) {
             return res.status(404).json({ message: 'Task not found' });

@@ -1,5 +1,10 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -10,14 +15,14 @@ exports.registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     try {
-
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(400).json({ message: "User already exists!" });
         }
 
-        const user = new User({ name, email, password, role });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({ name, email, password: hashedPassword, role });
         await user.save();
 
         const token = generateToken(user._id);
@@ -25,22 +30,20 @@ exports.registerUser = async (req, res) => {
         res.status(201).json({ 
             message: "User created successfully",
             token
-            });
+        });
     } catch (error) {
-        console.error('Error during user creation:', error.message); // Log the specific error
-        res.status(400).json({ message: 'Error creating user', error: error.message }); // Return error message in response
+        console.error('Error during user creation:', error.message);
+        res.status(400).json({ message: 'Error creating user', error: error.message });
     }
 };
 
-
-// @desc Login user (Event Manager or Participant)
 exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
         const user = await User.findOne({ email });
 
-        if (!user || !(await user.matchPassword(password))) {
+        if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
@@ -51,6 +54,7 @@ exports.loginUser = async (req, res) => {
         res.status(400).json({ message: 'Error logging in user' });
     }
 };
+
 
 // Get all users (Admin only)
 exports.getAllUsers = async (req, res) => {
@@ -78,12 +82,12 @@ exports.deleteUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
 
-        // Check if the user exists
+        
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Prevent deleting other admins
+       
         if (user.role === 'ADMIN') {
             return res.status(403).json({ message: 'You do not have permission to delete an admin' });
         }
@@ -98,3 +102,37 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
+
+// exports.changePassword = async (req, res) => {
+//     const { currentPassword, newPassword } = req.body;
+
+//     try {
+//         const user = await User.findById(req.user.id);
+
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+
+        
+//         const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+//         if (!isMatch) {
+//             return res.status(401).json({ message: 'Current password is incorrect' });
+//         }
+
+        
+//         const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        
+//         user.password = hashedPassword;
+//         await user.save();
+
+//         res.status(200).json({ message: 'Password changed successfully' });
+//     } catch (error) {
+//         console.error('Error changing password:', error.message);
+//         res.status(400).json({ message: 'Error changing password', error: error.message });
+//     }
+// };
+
+
+ 

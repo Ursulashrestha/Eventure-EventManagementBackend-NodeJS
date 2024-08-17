@@ -1,5 +1,5 @@
 const express = require('express');
-const { createEvent, getAllEvents, getEvent, updateEvent, deleteEvent, getAllEventManagers,getEventCount,getEventManagerCount, getAllParticipants, getAllUpcomingEvents } = require('../controllers/eventController');
+const { createEvent, getAllEvents, getEvent, updateEvent, deleteEvent, getAllEventManagers,getEventCount,getEventManagerCount, getAllParticipants, getAllUpcomingEvents, updateWEvent, deleteWEvent } = require('../controllers/eventController');
 const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -12,7 +12,10 @@ router.get('/all-events/count',auth, authorize('ADMIN', 'EVENTMANAGER'), getEven
 router.get('/participants',  auth, authorize('ADMIN', 'EVENTMANAGER'),getAllParticipants);
 router.get('/upcoming', auth, authorize('ADMIN', 'EVENTMANAGER'),getAllUpcomingEvents)
 router.get('/:id', auth, getEvent);
+
 router.put('/:id', auth, authorize('ADMIN', 'EVENTMANAGER'), updateEvent);
+router.put('/w/:id', auth, authorize('ADMIN', 'EVENTMANAGER'), updateWEvent);
 router.delete('/:id', auth, authorize('ADMIN', 'EVENTMANAGER'), deleteEvent);
+router.delete('/w/:id', auth, authorize('ADMIN', 'EVENTMANAGER'), deleteWEvent);
 
 module.exports = router;
